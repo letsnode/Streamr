@@ -61,6 +61,7 @@ main() {
 		local t_apr="APR:                ${C_LGn}%.2f%%${RES}"
 		local t_apy="APY:                ${C_LGn}%.2f%%${RES}\n"
 		
+		local t_bal="Баланс:             ${C_LGn}%.2f${RES} DATA / ${C_LGn}%.2f${RES}$"
 		local t_nop="Количество выплат:  ${C_LGn}%d${RES}"
 		local t_rr="Наград получено:    ${C_LGn}%.2f${RES} DATA / ${C_LGn}%.2f${RES}$\n"		
 		
@@ -75,6 +76,7 @@ main() {
 		local t_apr="APR:                 ${C_LGn}%.2f%%${RES}"
 		local t_apy="APY:                 ${C_LGn}%.2f%%${RES}\n"
 		
+		local t_bal="Balance:             ${C_LGn}%.2f${RES} DATA / ${C_LGn}%.2f${RES}$"
 		local t_nop="Number of payments:  ${C_LGn}%d${RES}"
 		local t_rr="Rewards received:    ${C_LGn}%.2f${RES} DATA / ${C_LGn}%.2f${RES}$\n"
 	fi
@@ -95,13 +97,20 @@ main() {
 	local apr=`jq -r .\"24h-APR\" <<< "$rewards_info"`
 	local apy=`jq -r .\"24h-APY\" <<< "$rewards_info"`
 	
+	local DATA_price=`. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/parsers/token_price.sh) -ts streamr`
+	
+	local balance_DATA=`wget -qO- 'https://polygon-rpc.com/' --header "Content-Type: application/json" --post-data '{"jsonrpc":"2.0","id":2,"method":"eth_call","params":[{"from":"0x0000000000000000000000000000000000000000","data":"0x70a08231000000000000000000000000'$(sed 's%0x%%' <<< "$wallet_address")'","to":"0x3a9a81d576d83ff21f26f325066054540720fc34"},"latest"]}' | jq -r ".result"`
+	local balance_DATA=`sed 's%0x%%' <<< "$balance_DATA"`
+	local balance_DATA=`bc <<< "scale=2; $(bc <<< "ibase=16; ${balance_DATA^^}")/10^18"`
+	local balance_USDT=`bc <<< "$DATA_price*$balance_DATA"`
+	
 	local n_o_p=`jq -r ".claimCount" <<< "$wallet_info"`
 	local rewards_DATA=`wget -qO- "https://brubeck1.streamr.network:3013/datarewards/$wallet_address" | jq ".DATA"`
 	if [ "$rewards_DATA" = "null" ] || [ "$rewards_DATA" -eq 0 ]; then
 		local rewards_DATA="0.00"
 		local rewards_USDT="0.00"
 	else
-		local rewards_USDT=`. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/parsers/token_price.sh) -ts data -m "$rewards_DATA"`
+		local rewards_USDT=`bc <<< "$DATA_price*$rewards_DATA"`
 	fi
 
 	# Output
@@ -127,6 +136,7 @@ main() {
 			printf_n "$t_apr" "$apr"
 			printf_n "$t_apy" "$apy"
 			
+			printf_n "$t_bal" "$balance_DATA" "$balance_USDT"
 			printf_n "$t_nop" "$n_o_p"
 			printf_n "$t_rr" "$rewards_DATA" "$rewards_USDT"
 		else
@@ -134,6 +144,8 @@ main() {
 			
 			printf_n "$t_apr" "$apr"
 			printf_n "$t_apy" "$apy"
+			
+			printf_n "$t_bal" "$balance_DATA" "$balance_USDT"
 		fi
 	fi
 }
