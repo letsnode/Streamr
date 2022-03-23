@@ -84,7 +84,7 @@ install() {
 END
 	docker run -dit --restart always --name streamr_node -p 7170:7170 -p 7171:7171 -p 1883:1883 -v $HOME/.streamr:/root/.streamr streamr/broker-node
 	. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/miscellaneous/insert_variable.sh) -n streamr_log -v "docker logs streamr_node -fn 100" -a
-	. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/miscellaneous/insert_variable.sh) -n streamr_node_info -v ". <(wget -qO- https://raw.githubusercontent.com/SecorD0/Streamr/main/wallet_info.sh) -l RU 2> /dev/null" -a
+	. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/miscellaneous/insert_variable.sh) -n streamr_node_info -v ". <(wget -qO- https://raw.githubusercontent.com/SecorD0/Streamr/main/node_info.sh) -l RU 2> /dev/null" -a
 	. <(wget -qO- https://raw.githubusercontent.com/SecorD0/utils/main/logo.sh)
 	printf_n "
 The node was ${C_LGn}started${RES}.
